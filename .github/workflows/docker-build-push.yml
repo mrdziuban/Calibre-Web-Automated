@@ -3,27 +3,47 @@ name: Build & Push - Dev
 
 on:
   push:
+    branches:
+      - mrd-updates
     paths:
+      - 'diffs/**'
       - 'empty_library/**'
       - 'root/**'
       - 'scripts/**'
       - '**/Dockerfile'
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: DockerHub Login
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PA_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -34,10 +54,17 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.repository.updated_at }}
             VERSION=${{ vars.CURRENT_DEV_VERSION }}-DEV_BUILD-${{ vars.CURRENT_DEV_BUILD_NUM }}
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/calibre-web-automated:dev
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           
           platforms: linux/amd64,linux/arm64
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       - name: Increment dev build number
         uses: action-pack/increment@v2
