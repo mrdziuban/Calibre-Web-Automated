@@ -48,7 +48,6 @@ jobs:
           push: true
           build-args: |
             BUILD_DATE=${{ github.event.repository.updated_at }}
-            VERSION=${{ vars.CURRENT_DEV_VERSION }}-DEV_BUILD-${{ vars.CURRENT_DEV_BUILD_NUM }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           
@@ -60,10 +59,3 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
-
-      - name: Increment dev build number
-        uses: action-pack/increment@v2
-        id: increment
-        with:
-          name: 'CURRENT_DEV_BUILD_NUM'
-          token: ${{ secrets.DEV_BUILD_NUM_INCREMENTOR_TOKEN }}

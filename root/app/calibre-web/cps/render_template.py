@@ -114,54 +114,9 @@ def get_sidebar_config(kwargs=None):
 
     return sidebar, simple
 
-# Checks if an update for CWA is available, returning True if yes
-def cwa_update_available() -> tuple[bool, str, str]:
-    with open("/app/CWA_RELEASE", 'r') as f:
-        current_version = f.read().strip()
-    response = requests.get("https://api.github.com/repos/crocodilestick/calibre-web-automated/releases/latest")
-    tag_name = response.json().get('tag_name', current_version)
-    return (tag_name != current_version), current_version, tag_name
-
-# Gets the date the last cwa update notification was displayed
-def get_cwa_last_notification() -> str:
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    if not os.path.isfile('/app/cwa_update_notice'):
-        with open('/app/cwa_update_notice', 'w') as f:
-            f.write(current_date)
-        return "0001-01-01"
-    else:
-        with open('/app/cwa_update_notice', 'r') as f:
-            last_notification = f.read()
-    return last_notification
-
-# Displays a notification to the user that an update for CWA is available, no matter which page they're on
-# Currently set to only display once per calender day
-def cwa_update_notification() -> None:
-    db = CWA_DB()
-    if db.cwa_settings['cwa_update_notifications']:
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        cwa_last_notification = get_cwa_last_notification()
-        
-        if cwa_last_notification == current_date:
-            return
-
-        update_available, current_version, tag_name = cwa_update_available()
-        if update_available:
-            message = f"⚡🚨 CWA UPDATE AVAILABLE! 🚨⚡ Current - {current_version} | Newest - {tag_name} | To update, just re-pull the image! This message will only display once per day"
-            flash(_(message), category="cwa_update")
-
-        with open('/app/cwa_update_notice', 'w') as f:
-            f.write(current_date)
-        return
-    else:
-        return
-
-
 # Returns the template for rendering and includes the instance name
 def render_title_template(*args, **kwargs):
     sidebar, simple = get_sidebar_config(kwargs)
-    if current_user.role_admin():
-        cwa_update_notification()
     try:
         return render_template(instance=config.config_calibre_web_title, sidebar=sidebar, simple=simple,
                                accept=config.config_upload_formats.split(','),

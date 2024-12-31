@@ -10,7 +10,6 @@ SHELL ["/bin/bash", "-c"]
 # docker build \
 # --tag crocodilestick/calibre-web-automated:dev \
 # --build-arg="BUILD_DATE=27-09-2024 12:06" \
-# --build-arg="VERSION=2.1.0-test-5" .
 
 # Good guide on how to set up a buildx builder here:
 # https://a-berahman.medium.com/simplifying-docker-multiplatform-builds-with-buildx-3d7efd670f58
@@ -20,15 +19,12 @@ SHELL ["/bin/bash", "-c"]
 # --push \
 # --platform linux/amd64,linux/arm64, \
 # --build-arg="BUILD_DATE=02-08-2024 20:52" \
-# --build-arg="VERSION=2.1.0" \
 # --tag crocodilestick/calibre-web-automated:latest .
 
 ARG BUILD_DATE
-ARG VERSION
 ARG CALIBREWEB_RELEASE=0.6.24
 ARG LSCW_RELEASE=0.6.24-ls304
 ARG UNIVERSAL_CALIBRE_RELEASE=7.16.0
-LABEL build_version="Version:- ${VERSION}"
 LABEL build_date="${BUILD_DATE}" 
 LABEL CW-Stock-version="${CALIBREWEB_RELEASE}"
 LABEL LSCW_Image_Release="${LSCW_RELEASE}"
@@ -137,7 +133,6 @@ RUN \
   rm -R /tmp/lscw/root/ && \
   # STEP 2.5 - ADD files referencing the versions of the installed main packages
     # CALIBRE_RELEASE is placed in root by universal calibre below and containers the calibre version being used
-  echo "$VERSION" >| /app/CWA_RELEASE && \
   echo "$LSCW_RELEASE" >| /app/LSCW_RELEASE && \
   echo "$KEPUBIFY_RELEASE" >| /app/KEPUBIFY_RELEASE && \
   # STEP 2.6 - Run CWA install script to make required dirs, set script permissions and add aliases for CLI commands  ect.

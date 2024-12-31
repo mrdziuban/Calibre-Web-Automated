@@ -200,11 +200,7 @@ def update_thumbnails():
 
 
 def cwa_get_package_versions() -> tuple[str, str, str, str]:
-    try:
-        with open("/app/CWA_RELEASE", "r") as f:
-            cwa_version = f.read()
-    except Exception:
-        cwa_version = "Unknown"
+    cwa_version = "Unknown"
 
     try:
         with open("/app/KEPUBIFY_RELEASE", "r") as f:
