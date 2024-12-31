@@ -1,0 +1,81 @@
+diff --git a/cps/static/js/details.js b/cps/static/js/details.js
+index b8b8b21e..79c84511 100644
+--- a/cps/static/js/details.js
++++ b/cps/static/js/details.js
+@@ -83,9 +83,10 @@ $("#have_read_cb").on("change", function() {
+ 
+ $(function() {
+     $("#archived_form").ajaxForm();
++    $("#rating_form").ajaxForm();
+ });
+ 
+-$("#archived_cb").on("change", function() {
++$("#archived_cb, #rating").on("change", function() {
+     $(this).closest("form").submit();
+ });
+ 
+diff --git a/cps/templates/config_view_edit.html b/cps/templates/config_view_edit.html
+index e4fea44d..906e56c7 100644
+--- a/cps/templates/config_view_edit.html
++++ b/cps/templates/config_view_edit.html
+@@ -26,7 +26,7 @@
+         </div>
+         <div class="form-group">
+           <label for="config_books_per_page">{{_('Books per Page')}}</label>
+-          <input type="number" min="1" max="200" class="form-control" name="config_books_per_page" id="config_books_per_page" value="{% if conf.config_books_per_page != None %}{{ conf.config_books_per_page }}{% endif %}" autocomplete="off">
++          <input type="number" min="1" class="form-control" name="config_books_per_page" id="config_books_per_page" value="{% if conf.config_books_per_page != None %}{{ conf.config_books_per_page }}{% endif %}" autocomplete="off">
+         </div>
+         <div class="form-group">
+           <label for="config_random_books">{{_('No. of Random Books to Display')}}</label>
+diff --git a/cps/templates/detail.html b/cps/templates/detail.html
+index 1eb81e30..d90a6bea 100644
+--- a/cps/templates/detail.html
++++ b/cps/templates/detail.html
+@@ -132,20 +132,25 @@
+                     {% endif %}
+                 {% endfor %}
+             </p>
+-            {% if entry.ratings.__len__() > 0 %}
+-                <div class="rating">
+-                    <p>
+-                        {% for number in range((entry.ratings[0].rating/2)|int(2)) %}
+-                            <span class="glyphicon glyphicon-star good"></span>
+-                            {% if loop.last and loop.index < 5 %}
+-                                {% for numer in range(5 - loop.index) %}
+-                                    <span class="glyphicon glyphicon-star-empty"></span>
+-                                {% endfor %}
+-                            {% endif %}
+-                        {% endfor %}
+-                    </p>
+-                </div>
+-            {% endif %}
++            <div class="rating">
++              <form
++                id="rating_form"
++                role="form"
++                action="{{ url_for('edit-book.edit_book_rating', book_id=entry.id) }}"
++                method="post"
++                enctype="multipart/form-data"
++              >
++                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
++                <input
++                  type="number"
++                  name="rating"
++                  id="rating"
++                  class="rating input-lg"
++                  data-clearable=""
++                  value="{% if entry.ratings.__len__() > 0 %}{{(entry.ratings[0].rating / 2)|int}}{% endif %}"
++                >
++              </form>
++            </div>
+             {% if entry.series|length > 0 %}
+                 <p>{{ _("Book %(index)s of %(range)s", index=entry.series_index|formatfloat(2), range=(url_for('web.books_list', data='series', sort_param='stored', book_id=entry.series[0].id)|escapedlink(entry.series[0].name))|safe) }}</p>
+ 
+@@ -361,6 +366,7 @@
+         <span class="glyphicon glyphicon-remove"></span> <%= content %>
+     </a>
+ </script>
++<script src="{{ url_for('static', filename='js/libs/bootstrap-rating-input.min.js') }}"></script>
+ <script src="{{ url_for('static', filename='js/details.js') }}"></script>
+ <script src="{{ url_for('static', filename='js/fullscreen.js') }}"></script>
+ <script type="text/javascript">

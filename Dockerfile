@@ -76,6 +76,7 @@ RUN \
     /app/calibre-web --strip-components=1 && \
   # STEP 1.6 - Sets up a python virtual environment and installs pip and wheel packages
   cd /app/calibre-web && \
+  patch -p1 < /app/calibre-web-automated/diffs/calibre-web.diff && \
   python3 -m venv /lsiopy && \
   pip install -U --no-cache-dir \
     pip \
@@ -198,7 +199,7 @@ RUN \
 # add unrar
 COPY --from=unrar /usr/bin/unrar-ubuntu /usr/bin/unrar
 
-# ports and volumes
+# ports and volumes
 EXPOSE 8083
 VOLUME /config
 VOLUME /cwa-book-ingest
