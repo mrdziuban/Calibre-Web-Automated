@@ -100,6 +100,13 @@ def edit_book(book_id):
     return do_edit_book(book_id)
 
 
+@editbook.route("/admin/book/rating/<int:book_id>", methods=['POST'])
+@login_required_if_no_ano
+@edit_required
+def edit_book_rating(book_id):
+    return do_edit_book_rating(book_id)
+
+
 @editbook.route("/upload", methods=["POST"])
 @login_required_if_no_ano
 @upload_required
@@ -435,10 +442,7 @@ def table_xchange_author_title():
     return ""
 
 
-def do_edit_book(book_id, upload_formats=None):
-    modify_date = False
-    edit_error = False
-
+def with_book_for_edit(book_id, f):
     # create the function for sorting...
     calibre_db.create_functions(config)
 
@@ -452,6 +456,29 @@ def do_edit_book(book_id, upload_formats=None):
     to_save = request.form.to_dict()
 
     try:
+        return f(book, to_save)
+    except ValueError as e:
+        log.error_or_exception("Error: {}".format(e))
+        calibre_db.session.rollback()
+        flash(str(e), category="error")
+        return redirect(url_for('web.show_book', book_id=book.id))
+    except (OperationalError, IntegrityError, StaleDataError, InterfaceError) as e:
+        log.error_or_exception("Database error: {}".format(e))
+        calibre_db.session.rollback()
+        flash(_("Oops! Database Error: %(error)s.", error=e.orig if hasattr(e, "orig") else e), category="error")
+        return redirect(url_for('web.show_book', book_id=book.id))
+    except Exception as ex:
+        log.error_or_exception(ex)
+        calibre_db.session.rollback()
+        flash(_("Error editing book: {}".format(ex)), category="error")
+        return redirect(url_for('web.show_book', book_id=book.id))
+
+
+def do_edit_book(book_id, upload_formats=None):
+    def go(book, to_save):
+        modify_date = False
+        edit_error = False
+
         # Update folder of book on local disk
         edited_books_id = None
         title_author_error = None
@@ -565,21 +592,22 @@ def do_edit_book(book_id, upload_formats=None):
             return redirect(url_for('web.show_book', book_id=book.id))
         else:
             return render_edit_book(book_id)
-    except ValueError as e:
-        log.error_or_exception("Error: {}".format(e))
-        calibre_db.session.rollback()
-        flash(str(e), category="error")
-        return redirect(url_for('web.show_book', book_id=book.id))
-    except (OperationalError, IntegrityError, StaleDataError, InterfaceError) as e:
-        log.error_or_exception("Database error: {}".format(e))
-        calibre_db.session.rollback()
-        flash(_("Oops! Database Error: %(error)s.", error=e.orig if hasattr(e, "orig") else e), category="error")
-        return redirect(url_for('web.show_book', book_id=book.id))
-    except Exception as ex:
-        log.error_or_exception(ex)
-        calibre_db.session.rollback()
-        flash(_("Error editing book: {}".format(ex)), category="error")
-        return redirect(url_for('web.show_book', book_id=book.id))
+
+    return with_book_for_edit(book_id, go)
+
+
+def do_edit_book_rating(book_id):
+    def go(book, to_save):
+        if edit_book_ratings(to_save, book):
+            book.last_modified = datetime.now(timezone.utc)
+            calibre_db.set_metadata_dirty(book.id)
+
+        calibre_db.session.merge(book)
+        calibre_db.session.commit()
+
+        return ""
+
+    return with_book_for_edit(book_id, go)
 
 
 def merge_metadata(book, meta, to_save):
@@ -983,11 +1011,12 @@ def render_edit_book(book_id):
 
 def edit_book_ratings(to_save, book):
     changed = False
-    if strip_whitespaces(to_save.get("rating", "")):
+    given_rating = strip_whitespaces(to_save.get("rating", ""))
+    if given_rating != "" and given_rating != "0":
         old_rating = False
         if len(book.ratings) > 0:
             old_rating = book.ratings[0].rating
-        rating_x2 = int(float(to_save.get("rating", "")) * 2)
+        rating_x2 = int(float(given_rating) * 2)
         if rating_x2 != old_rating:
             changed = True
             is_rating = calibre_db.session.query(db.Ratings).filter(db.Ratings.rating == rating_x2).first()
