@@ -4,7 +4,7 @@ name: Build & Push - Dev
 on:
   push:
     branches:
-      - mrd-updates
+      - main
 
 env:
   REGISTRY: ghcr.io
