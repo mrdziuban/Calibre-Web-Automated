@@ -19,6 +19,7 @@ change_script_permissions () {
     chmod +x /etc/s6-overlay/s6-rc.d/cwa-init-remove-locks/run
     chmod +x /etc/s6-overlay/s6-rc.d/metadata-change-detector/run
     chmod +x /etc/s6-overlay/s6-rc.d/cwa-set-perms/run
+    chmod +x /etc/s6-overlay/s6-rc.d/cwa-auto-hardcover/run
     chmod +x /etc/s6-overlay/s6-rc.d/cwa-auto-library/run
     chmod +x /etc/s6-overlay/s6-rc.d/cwa-auto-zipper/run
     chmod +x /etc/s6-overlay/s6-rc.d/cwa-set-binary-paths/run

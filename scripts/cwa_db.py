@@ -8,13 +8,46 @@ from datetime import datetime
 from tabulate import tabulate
 
 
-class CWA_DB:
-    def __init__(self, verbose=False):
+class DB:
+    def __init__(self, tag, name, db_path, verbose=False):
+        self.tag = tag
+        self.name = name
+        self.db_path = db_path
         self.verbose = verbose
-
-        self.db_file = "cwa.db"
-        self.db_path = "/config/"
         self.con, self.cur = self.connect_to_db() # type: ignore
+
+
+    def connect_to_db(self) -> tuple[sqlite3.Connection, sqlite3.Cursor] | None:
+        """Establishes connection with the db or makes one if one doesn't already exist"""
+        con = None
+        cur = None
+        try:
+            con = sqlite3.connect(self.db_path)
+            if self.verbose:
+                con.set_trace_callback(print)
+        except sqlError as e:
+            print(f"[{self.tag}]: The following error occurred while trying to connect to the {self.name} DB: {e}")
+            sys.exit(0)
+        if con:
+            cur = con.cursor()
+            if self.verbose:
+                print(f"[{self.tag}]: Connection with the {self.name} DB Successful!")
+            return con, cur
+
+
+class AppDB(DB):
+    def __init__(self, verbose=False):
+        super().__init__("app-db", "app", "/config/app.db", verbose)
+
+
+class MetaDB(DB):
+    def __init__(self, verbose=False):
+        super().__init__("meta-db", "meta", "/calibre-library/metadata.db", verbose)
+
+
+class CWA_DB(DB):
+    def __init__(self, verbose=False):
+        super().__init__("cwa-db", "CWA Enforcement", "/config/cwa.db", verbose)
 
         self.schema_path = "/app/calibre-web-automated/scripts/cwa_schema.sql"
 
@@ -57,22 +90,6 @@ class CWA_DB:
             print("[ATTENTION USER]: Split Libraries (having your books in a separate location to your Calibre Library) are currently unsupported by CWA. This is something currently being worked on to be re-added in V2.2.0")
             cur.execute("UPDATE settings SET config_calibre_split=0;")
             con.commit()
-
-
-    def connect_to_db(self) -> tuple[sqlite3.Connection, sqlite3.Cursor] | None:
-        """Establishes connection with the db or makes one if one doesn't already exist"""
-        con = None
-        cur = None
-        try:
-            con = sqlite3.connect(self.db_path + self.db_file)
-        except sqlError as e:
-            print(f"[cwa-db]: The following error occurred while trying to connect to the CWA Enforcement DB: {e}")
-            sys.exit(0)
-        if con:
-            cur = con.cursor()
-            if self.verbose:
-                print("[cwa-db]: Connection with the CWA Enforcement DB Successful!")
-            return con, cur
 
 
     def make_tables(self) -> tuple[list[str], list[str]]:

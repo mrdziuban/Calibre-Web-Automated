@@ -1,0 +1,19 @@
+#!/usr/bin/with-contenv bash
+
+echo "[cwa-auto-hardcover] Starting CWA-Auto-Hardcover service..."
+
+while :
+do
+    python3 /app/calibre-web-automated/scripts/auto_hardcover.py
+    if [[ $? == 1 ]]
+    then
+        echo "[cwa-auto-hardcover] Error occurred during script initialisation (see errors above)."
+    elif [[ $? == 2 ]]
+    then
+        echo "[cwa-auto-hardcover] Error occurred while syncing from Hardcover (see errors above)."
+    fi
+
+    # We sleep in the background to make the script interruptible via SIGTERM when running in docker
+    sleep 1800 &
+    wait $!
+done
