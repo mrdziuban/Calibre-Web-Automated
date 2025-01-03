@@ -4,18 +4,18 @@
 <div class="discover">
   <h2>{{title}}</h2>
     <div>
-      <h3 style="color: whitesmoke;">CWA Library Convertor - Current Target Format - {{target_format}}</h3><br>
+      <h3 style="color: whitesmoke;">CWA Send-to-Kindle EPUB Fixer</h3><br>
       <div style="display: flex;
                   justify-content: space-between;
                   gap: 20px;">
         <p style="font-size: xx-small;max-width: 70%;">
-          Upon loading this page, if you have previously started a run of the CWA Convert Library service either here in the Web UI or through the CLI, you will see the output of the most recent previous run below. 
+          Upon loading this page, if you have previously started a run of the CWA Send-to_kindle EPUB Fixer service either here in the Web UI or through the CLI, you will see the output of the most recent previous run below. 
           Once you start a run, you are free to leave the page and return whenever you want to check on the run's progress. If you wish to cancel a run that is still in progress, simply press the Cancel button above 
-          and the run will terminate ASAP. If you wish to change the service's target format, please change your target format in the CWA Settings panel as desired.
+          and the run will terminate ASAP. This tool is based on the <a href="https://kindle-epub-fix.netlify.app/">Amazon Kindle EPUB Fix</a> tool by <a href="https://github.com/innocenat/kindle-epub-fix">innocenat</a>
         </p>
         <div>
-          <a class="btn btn-default" href="{{ url_for('convert_library.cancel_convert_library') }}" style="vertical-align: top; float: right; width: 100px; margin-left: 10px;">{{_('Cancel')}}</a>
-          <a class="btn btn-default" href="{{ url_for('convert_library.start_conversion') }}" style="vertical-align: top; float: right; width: 100px;">{{_('Start')}}</a>
+          <a class="btn btn-default" href="{{ url_for('epub_fixer.cancel_epub_fixer') }}" style="vertical-align: top; float: right; width: 100px; margin-left: 10px;">{{_('Cancel')}}</a>
+          <a class="btn btn-default" href="{{ url_for('epub_fixer.start_epub_fixer') }}" style="vertical-align: top; float: right; width: 100px;">{{_('Start')}}</a>
         </div>
       </div>
       <div class="row">
@@ -40,7 +40,7 @@
     let get;
     
     try {
-      const res = await fetch("{{ url_for('convert_library.get_status')}}");
+      const res = await fetch("{{ url_for('epub_fixer.get_status')}}");
       get = await res.json();
     } catch (e) {
       console.error("Error: ", e);
@@ -48,7 +48,7 @@
     
     document.getElementById("innerStatus").innerHTML = get.status.replace(/\n/g, "<br>"); // * 10 + "&percnt;"
     
-    if (get.status.includes("CWA Convert Library Service - Run Ended:") || get.status.includes("CONVERT LIBRARY PROCESS TERMINATED BY USER")){
+    if (get.status.includes("CWA Kindle EPUB Fixer Service - Run Ended:") || get.status.includes("CWA EPUB FIXER PROCESS TERMINATED BY USER AT")){
       document.getElementById("innerStatus").innerHTML;
       clearTimeout(timeout);
       return false;
