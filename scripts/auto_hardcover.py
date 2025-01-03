@@ -141,13 +141,13 @@ class AutoHardcover:
 
     def get_books_without_ratings(self) -> dict:
         books_without_ratings = self.run_db_select(self.meta_db, """
-            SELECT b.id, i.val AS isbn
+            SELECT b.id, b.title, i.val AS isbn
             FROM books b
             JOIN identifiers i ON b.id = i.book AND i.type = 'isbn'
             LEFT JOIN books_ratings_link r ON b.id = r.book
             WHERE r.rating IS NULL
         """)
-        return reduce(lambda acc, b: acc | { b['isbn']: b['id'] }, books_without_ratings, {})
+        return reduce(lambda acc, b: acc | { b['isbn']: { 'id': b['id'], 'title': b['title'] } }, books_without_ratings, {})
 
 
     def hardcover_ratings_query(self, isbns) -> str:
@@ -180,18 +180,18 @@ class AutoHardcover:
 
 
     def sync_ratings(self) -> None:
-        isbn_to_book_id = self.get_books_without_ratings()
-        isbn_to_rating = self.get_ratings_from_hardcover(list(isbn_to_book_id.keys()))
+        isbn_to_book = self.get_books_without_ratings()
+        isbn_to_rating = self.get_ratings_from_hardcover(list(isbn_to_book.keys()))
 
-        for isbn, book_id in isbn_to_book_id.items():
+        for isbn, book in isbn_to_book.items():
             rating = isbn_to_rating.get(isbn, None)
             if rating is not None:
-                print(f"[cwa-auto-hardcover] Setting book {book_id} rating to {rating}")
+                print(f"[cwa-auto-hardcover] Setting rating to {rating} for book: {book}")
                 db_rating = int(float(rating) * 2)
                 self.meta_db.cur.execute(f"INSERT OR IGNORE INTO ratings (rating) VALUES ({db_rating})")
                 self.meta_db.cur.execute(f"""
                     INSERT INTO books_ratings_link (book, rating) VALUES (
-                        {book_id},
+                        {book['id']},
                         (SELECT id FROM ratings WHERE rating = {db_rating})
                     )
                 """)
