@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block body %}
+
+{% block header %}
+<style>
+</style>
+{% endblock %}
+
+<div class="discover">
+  <h2>{{title}}</h2>
+
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0;">{{title}} - Logs</h3>
+    </div>
+    <br>
+    <table class="table table-striped">
+      <tr>
+        <th>Log Date</th>
+        <th>Log Filename</th>
+        <th>Open Log</th>
+        <th>Download Log</th>
+      </tr>
+      {% for log, log_path in logs.items() %}
+      <tr>
+        <td>{{ log_dates[log]["date"] }} {{ log_dates[log]["time"] }}</td>
+        <td>{{ log }}</td>
+        <td><a href="{{ url_for('cwa_logs.read_log', log_filename=log) }}">Open in Browser</a></td>
+        <td><a href="{{ url_for('cwa_logs.download_log', log_filename=log) }}">{{ log_path }}</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+</div>
+{% endblock %}
